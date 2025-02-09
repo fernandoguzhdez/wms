@@ -270,7 +270,7 @@ export const DetalleInventario = ({ navigation }) => {
         }
         left={props => <List.Icon {...props} icon="folder" color="#828282" />}
         expanded={expandedIndex === item.Id}
-        onPress={() => handleAccordionPress(item.Id)}>
+        onPress={() => {handleAccordionPress(item.Id), console.log('click', item)}}>
         <View style={{ marginVertical: 10, flexDirection: 'row', width: '100%' }}>
           <View style={{ flex: 0.8 }}>
             <Text
@@ -296,6 +296,14 @@ export const DetalleInventario = ({ navigation }) => {
               }}>
               Almacen:{' '}
               <Text style={styles.tituloListItemData}>{item.WhsCode}</Text>
+            </Text>
+            <Text
+              style={{
+                ...styles.tituloListItem,
+                fontSize: windowsWidth > 500 ? 24 : 20,
+              }}>
+              Ubicacion:{' '}
+              <Text style={styles.tituloListItemData}>{item.BinCode}</Text>
             </Text>
             <Text
               style={{

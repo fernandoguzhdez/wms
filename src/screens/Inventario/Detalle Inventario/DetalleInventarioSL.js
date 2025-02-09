@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useContext} from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -12,18 +12,18 @@ import {
   TouchableHighlight,
 } from 'react-native';
 import axios from 'axios';
-import {AuthContext} from '../../../contex/AuthContext';
-import {List} from 'react-native-paper';
+import { AuthContext } from '../../../contex/AuthContext';
+import { List } from 'react-native-paper';
 import CheckBox from '@react-native-community/checkbox';
-import {Icon, SearchBar} from 'react-native-elements';
+import { Icon, SearchBar } from 'react-native-elements';
 import Modal from 'react-native-modal';
-import {Button} from 'react-native-elements';
-import {Card, Badge, Input} from '@rneui/themed';
+import { Button } from 'react-native-elements';
+import { Card, Badge, Input } from '@rneui/themed';
 import Spinner from 'react-native-loading-spinner-overlay';
 import moment from 'moment';
-import {SelectList} from 'react-native-dropdown-select-list';
+import { SelectList } from 'react-native-dropdown-select-list';
 
-export const DetalleInventarioSL = ({navigation, route}) => {
+export const DetalleInventarioSL = ({ navigation, route }) => {
   const {
     url,
     tokenInfo,
@@ -49,7 +49,7 @@ export const DetalleInventarioSL = ({navigation, route}) => {
   } = useContext(AuthContext);
 
   const [page, setPage] = useState(1);
-  const handlePress = () => setExpanded(!expanded);
+  const handlePress = () => {setExpanded(!expanded), console.log()};
   const [expanded, setExpanded] = React.useState(false);
   const [items, setItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
@@ -139,7 +139,7 @@ export const DetalleInventarioSL = ({navigation, route}) => {
     let dato = updatedSelection.filter(id => id == item.Id);
     if (dato.length > 0) {
       let arrayItem = [item];
-      let array = arrayItem.map(item => ({...item, [nuevaColumna]: 1}));
+      let array = arrayItem.map(item => ({ ...item, [nuevaColumna]: 1 }));
       itemsSeleccionados.push(array[0]);
     } else {
       const updatedArray = itemsSeleccionados.filter(
@@ -155,7 +155,7 @@ export const DetalleInventarioSL = ({navigation, route}) => {
       if (itemsSeleccionados.length > 0) {
         setIsModalImpresionEtiquetas(!isModalImpresionEtiquetas);
       } else {
-        Alert.alert('Info', 'No ha seleccionado ningun item', [, {text: 'OK'}]);
+        Alert.alert('Info', 'No ha seleccionado ningun item', [, { text: 'OK' }]);
       }
     } else {
       setModuloScan(7);
@@ -184,7 +184,7 @@ export const DetalleInventarioSL = ({navigation, route}) => {
       Authorization: `Bearer ${tokenInfo.token}`,
     };
     axios
-      .put(`${url}/api/Inventory/Print_Item_Etq`, impresionEtiquetas, {headers})
+      .put(`${url}/api/Inventory/Print_Item_Etq`, impresionEtiquetas, { headers })
       .then(response => {
         console.log(response.status);
         Alert.alert('Info', 'Enviado exitosamente!!', [
@@ -205,7 +205,7 @@ export const DetalleInventarioSL = ({navigation, route}) => {
       });
   };
 
-  const renderItem = ({item, index}) => (
+  const renderItem = ({ item, index }) => (
     <View
       style={{
         padding: 1,
@@ -217,11 +217,11 @@ export const DetalleInventarioSL = ({navigation, route}) => {
       <CheckBox
         value={selectedItems.includes(item.Id)}
         onValueChange={() => handleCheckboxToggle(item.Id, item)}
-        style={{minHeight: '100%', minWidth: 0}}
-        tintColors={{true: '#F15927', false: 'black'}}
+        style={{ minHeight: '100%', minWidth: 0 }}
+        tintColors={{ true: '#F15927', false: 'black' }}
       />
       <List.Accordion
-        style={{flex: 1, minWidth: '100%', backgroundColor: '#ffffff'}}
+        style={{ flex: 1, minWidth: '100%', backgroundColor: '#ffffff' }}
         titleStyle={{
           fontSize: windowsWidth > 500 ? 26 : 20,
           fontWeight: '600',
@@ -230,7 +230,7 @@ export const DetalleInventarioSL = ({navigation, route}) => {
         title={'Almacen - ' + item.WhsCode + ' - ' + item.IdCode}
         left={props => <List.Icon {...props} icon="folder" color="#828282" />}
         onPress={handlePress}>
-        <View style={{marginVertical: 10}}>
+        <View style={{ marginVertical: 10 }}>
           <Text
             style={{
               ...styles.tituloListItem,
@@ -268,6 +268,14 @@ export const DetalleInventarioSL = ({navigation, route}) => {
               ...styles.tituloListItem,
               fontSize: windowsWidth > 500 ? 24 : 20,
             }}>
+            Ubicacion:{' '}
+            <Text style={styles.tituloListItemData}>{item.BinCode}</Text>
+          </Text>
+          <Text
+            style={{
+              ...styles.tituloListItem,
+              fontSize: windowsWidth > 500 ? 24 : 20,
+            }}>
             En fecha:{' '}
             <Text style={styles.tituloListItemData}>
               {moment(item.InDate).utc().format('DD/MM/YYYY')}
@@ -279,16 +287,16 @@ export const DetalleInventarioSL = ({navigation, route}) => {
   );
 
   return (
-    <View style={{flex: 1}}>
+    <View style={{ flex: 1 }}>
       <Spinner visible={isLoading} size={60} color="#ffffff" />
       <SearchBar
-        searchIcon={{size: 24}}
+        searchIcon={{ size: 24 }}
         onChangeText={text => handleSearchDetalleInvSL(text)}
         onClear={text => handleSearchDetalleInvSL('')}
         placeholder="Buscar..."
-        style={{color: '#000000', fontSize: windowsWidth > 500 ? 26 : 20}}
+        style={{ color: '#000000', fontSize: windowsWidth > 500 ? 26 : 20 }}
         value={searchDetalleInvSL}
-        inputStyle={{backgroundColor: '#ffffff', borderRadius: 10}}
+        inputStyle={{ backgroundColor: '#ffffff', borderRadius: 10 }}
         containerStyle={{
           backgroundColor: '#ffffff',
           borderRadius: 50,
@@ -298,7 +306,7 @@ export const DetalleInventarioSL = ({navigation, route}) => {
         }}
         theme
       />
-      <View style={{flexDirection: 'row'}}>
+      <View style={{ flexDirection: 'row' }}>
         <View
           style={{
             flex: 0.6,
@@ -349,7 +357,7 @@ export const DetalleInventarioSL = ({navigation, route}) => {
             alignItems: 'center',
             flex: 0.6,
           }}>
-          <Text style={{fontSize: 20, marginHorizontal: 20}}>
+          <Text style={{ fontSize: 20, marginHorizontal: 20 }}>
             {itemsPerPage * currentPage - 19 + '-' + itemsPerPage * currentPage}{' '}
             de {data.length}
           </Text>
@@ -389,7 +397,7 @@ export const DetalleInventarioSL = ({navigation, route}) => {
 
       <Modal
         isVisible={isModalImpresionEtiquetas}
-        style={{flex: 1}}
+        style={{ flex: 1 }}
         animationInTiming={1000}>
         <View
           style={{
@@ -401,11 +409,11 @@ export const DetalleInventarioSL = ({navigation, route}) => {
             height: '100%',
           }}>
           <Text
-            style={{fontSize: 26, textAlign: 'center', margin: 20, gap: 20}}>
+            style={{ fontSize: 26, textAlign: 'center', margin: 20, gap: 20 }}>
             Impresion Etiquetas
           </Text>
           <ScrollView>
-            <View style={{flex: 1, padding: 20}}>
+            <View style={{ flex: 1, padding: 20 }}>
               {itemsSeleccionados.map((item, index) => (
                 <Card
                   key={index}
@@ -423,8 +431,8 @@ export const DetalleInventarioSL = ({navigation, route}) => {
                       top: -25,
                       right: -25,
                     }}
-                    textStyle={{fontSize: 18}}
-                    badgeStyle={{width: 'auto', height: 'auto'}}
+                    textStyle={{ fontSize: 18 }}
+                    badgeStyle={{ width: 'auto', height: 'auto' }}
                     onPress={() => {
                       setCantidad(item.cantidadEtiquetas);
                       setIsModalCantidad(!isModalCantidad);
@@ -450,34 +458,35 @@ export const DetalleInventarioSL = ({navigation, route}) => {
               ))}
             </View>
           </ScrollView>
-          <View style={{marginTop: 20, rowGap: 10}}>
+          <View style={{ marginTop: 20, rowGap: 10 }}>
             <Button
               title="Enviar"
               onPress={() => {
                 if (selectedPrinter.length === 0 && defaultPrinter.length === 0) {
-                    Alert.alert('Info', 'No has seleccionado impresora', [
-                        { text: 'OK', onPress: () => { } },
-                    ]);
+                  Alert.alert('Info', 'No has seleccionado impresora', [
+                    { text: 'OK', onPress: () => { } },
+                  ]);
                 } else {
-                    Alert.alert('Advertencia', '¿Estas seguro de proceder?', [
-                        ,
-                        {
-                          text: 'Imprimir',
-                          onPress: () => {
-                            imprimirEtiquetas();
-                            setIsModalImpresionEtiquetas(!isModalImpresionEtiquetas);
-                            setSelectedPrinter([])
-                          },
-                        },
-                        {
-                          text: 'Cancelar',
-                          onPress: () => console.log('Cancel Pressed'),
-                          style: 'cancel',
-                        },
-                      ]);
-                    }}
+                  Alert.alert('Advertencia', '¿Estas seguro de proceder?', [
+                    ,
+                    {
+                      text: 'Imprimir',
+                      onPress: () => {
+                        imprimirEtiquetas();
+                        setIsModalImpresionEtiquetas(!isModalImpresionEtiquetas);
+                        setSelectedPrinter([])
+                      },
+                    },
+                    {
+                      text: 'Cancelar',
+                      onPress: () => console.log('Cancel Pressed'),
+                      style: 'cancel',
+                    },
+                  ]);
                 }
-              buttonStyle={{backgroundColor: '#3B5998'}}
+              }
+              }
+              buttonStyle={{ backgroundColor: '#3B5998' }}
             />
             <SelectList
               data={printersList}
@@ -488,8 +497,8 @@ export const DetalleInventarioSL = ({navigation, route}) => {
                 key: defaultPrinter.key,
                 value: defaultPrinter.value,
               }}
-              inputStyles={{color: '#000'}}
-              dropdownTextStyles={{color: '#616d71'}}
+              inputStyles={{ color: '#000' }}
+              dropdownTextStyles={{ color: '#616d71' }}
               boxStyles={styles.selectBox}
               searchPlaceholder="Buscar..."
             />
@@ -520,7 +529,7 @@ export const DetalleInventarioSL = ({navigation, route}) => {
                   ],
                 );
               }}
-              buttonStyle={{backgroundColor: '#3B5998'}}
+              buttonStyle={{ backgroundColor: '#3B5998' }}
             />
             <Button
               title="Cancelar"
@@ -528,7 +537,7 @@ export const DetalleInventarioSL = ({navigation, route}) => {
                 setIsModalImpresionEtiquetas(!isModalImpresionEtiquetas);
                 setSelectedPrinter([])
               }}
-              buttonStyle={{backgroundColor: '#DC3545'}}
+              buttonStyle={{ backgroundColor: '#DC3545' }}
             />
           </View>
         </View>
@@ -536,7 +545,7 @@ export const DetalleInventarioSL = ({navigation, route}) => {
 
       <Modal
         isVisible={isModalCantidad}
-        style={{flex: 1}}
+        style={{ flex: 1 }}
         animationInTiming={1000}>
         <View
           style={{
@@ -547,11 +556,11 @@ export const DetalleInventarioSL = ({navigation, route}) => {
             flexDirection: 'col',
           }}>
           <Text
-            style={{fontSize: 26, textAlign: 'center', margin: 20, gap: 20}}>
+            style={{ fontSize: 26, textAlign: 'center', margin: 20, gap: 20 }}>
             Ingresa Cantidad {itemSeleccionado}
           </Text>
-          <View style={{flexDirection: 'row'}}>
-            <View style={{flex: 1, justifyContent: 'center'}}>
+          <View style={{ flexDirection: 'row' }}>
+            <View style={{ flex: 1, justifyContent: 'center' }}>
               <Input
                 value={cantidad.toString()}
                 onChangeText={text => {
@@ -562,7 +571,7 @@ export const DetalleInventarioSL = ({navigation, route}) => {
                   }
                   setCantidad(nuevaCadena);
                 }}
-                style={{fontWeight: 'bold', fontSize: 25}}
+                style={{ fontWeight: 'bold', fontSize: 25 }}
                 keyboardType="numeric"
               />
             </View>
@@ -595,7 +604,7 @@ export const DetalleInventarioSL = ({navigation, route}) => {
               />
             </View>
           </View>
-          <View style={{marginTop: 20, rowGap: 10}}>
+          <View style={{ marginTop: 20, rowGap: 10 }}>
             <Button
               title="Guardar"
               onPress={() => {
@@ -606,14 +615,14 @@ export const DetalleInventarioSL = ({navigation, route}) => {
                 });
                 setIsModalCantidad(!isModalCantidad);
               }}
-              buttonStyle={{backgroundColor: '#3B5998'}}
+              buttonStyle={{ backgroundColor: '#3B5998' }}
             />
             <Button
               title="Cancelar"
               onPress={() => {
                 setIsModalCantidad(!isModalCantidad);
               }}
-              buttonStyle={{backgroundColor: '#DC3545'}}
+              buttonStyle={{ backgroundColor: '#DC3545' }}
             />
           </View>
         </View>
@@ -621,7 +630,7 @@ export const DetalleInventarioSL = ({navigation, route}) => {
       {/* Ventana de series y lotes */}
       <Modal
         isVisible={isModalImpresionSL}
-        style={{flex: 1}}
+        style={{ flex: 1 }}
         animationInTiming={1000}>
         <View
           style={{
@@ -632,27 +641,27 @@ export const DetalleInventarioSL = ({navigation, route}) => {
             flexDirection: 'col',
           }}>
           <Text
-            style={{fontSize: 26, textAlign: 'center', margin: 20, gap: 20}}>
+            style={{ fontSize: 26, textAlign: 'center', margin: 20, gap: 20 }}>
             Impresion Series y Lotes
           </Text>
           <ScrollView>
-            <View style={{flex: 1, padding: 20}}></View>
+            <View style={{ flex: 1, padding: 20 }}></View>
           </ScrollView>
-          <View style={{marginTop: 20, rowGap: 10}}>
+          <View style={{ marginTop: 20, rowGap: 10 }}>
             <Button
               title="Guardar"
               onPress={() => {
                 imprimirEtiquetas();
                 setIsModalImpresionSL(!isModalImpresionSL);
               }}
-              buttonStyle={{backgroundColor: '#3B5998'}}
+              buttonStyle={{ backgroundColor: '#3B5998' }}
             />
             <Button
               title="Cancelar"
               onPress={() => {
                 setIsModalImpresionSL(!isModalImpresionSL);
               }}
-              buttonStyle={{backgroundColor: '#DC3545'}}
+              buttonStyle={{ backgroundColor: '#DC3545' }}
             />
           </View>
         </View>
