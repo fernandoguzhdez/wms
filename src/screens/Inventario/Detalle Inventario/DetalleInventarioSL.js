@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   Alert,
+  TextInput,
   TouchableHighlight,
 } from 'react-native';
 import axios from 'axios';
@@ -49,7 +50,7 @@ export const DetalleInventarioSL = ({ navigation, route }) => {
   } = useContext(AuthContext);
 
   const [page, setPage] = useState(1);
-  const handlePress = () => {setExpanded(!expanded), console.log()};
+  const handlePress = () => { setExpanded(!expanded), console.log() };
   const [expanded, setExpanded] = React.useState(false);
   const [items, setItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
@@ -71,12 +72,91 @@ export const DetalleInventarioSL = ({ navigation, route }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20; // Número de elementos por página
   const [enableCheck, setEnableCheck] = useState(false);
+  const [modalUbicaciones, setModalUbicaciones] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [ubicaciones, setUbicaciones] = useState([]);
+  const [ubicacionSeleccionada, setUbicacionSeleccionada] = useState(null);
+  const [loteSeleccionado, setLoteSeleccionado] = useState([])
 
   const limpiarVariables = () => {
     const unsubscribe = navigation.addListener('beforeRemove', () => {
       setSearchDetalleInv(null);
     });
     return unsubscribe;
+  };
+
+  const actualizarUbicacion = () => {
+    console.log('Datos a enviar...', [{
+      "gestionItem": loteSeleccionado.GestionItem,
+      "itemCode": loteSeleccionado.ItemCode,
+      "whsCode": loteSeleccionado.WhsCode,
+      "binEntry": ubicacionSeleccionada.AbsEntry,
+      "binName": ubicacionSeleccionada.BinCode,
+      "serialOrLote": loteSeleccionado.IdCode
+    }])
+    // Set headers
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${tokenInfo.token}`,
+    };
+    axios
+      .put(`${url}/api/Inventory/Upd_Batchs_Serials`,
+        [{
+          "gestionItem": loteSeleccionado.GestionItem,
+          "itemCode": loteSeleccionado.ItemCode,
+          "whsCode": loteSeleccionado.WhsCode,
+          "binEntry": ubicacionSeleccionada.AbsEntry,
+          "binName": ubicacionSeleccionada.BinCode,
+          "serialOrLote": loteSeleccionado.IdCode
+        }], { headers })
+      .then(response => {
+        console.log(response.status);
+        Alert.alert('Info', 'Actualizado exitosamente!!', [
+          ,
+          {
+            text: 'OK',
+            onPress: () => {
+              fetchDataDetalleInvSL(loteSeleccionado.ItemCode, loteSeleccionado.WhsCode, loteSeleccionado.GestionItem)
+              setModalUbicaciones(false)
+              setUbicacionSeleccionada(null)
+              setUbicaciones([])
+              setSearchText('')
+              setLoteSeleccionado([])
+            },
+          },
+        ]);
+      })
+      .catch(error => {
+        Alert.alert('Error', `Error al actualizar ubicacion : ${error}`, [
+          {
+            text: 'OK', onPress: () => {
+              setModalUbicaciones(false)
+              setUbicacionSeleccionada(null)
+              setUbicaciones([])
+              setSearchText('')
+              setLoteSeleccionado([])
+            }
+          },
+        ]);
+      });
+  }
+
+  const buscarUbicaciones = (texto) => {
+    setSearchText(texto);
+    // Set headers
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${tokenInfo.token}`,
+    };
+    axios
+      .get(`${url}/api/MasterDetails/Get_Bins?NameBin=${texto}`, { headers })
+      .then(response => {
+        setUbicaciones(response.data.OBIN || []);
+      })
+      .catch(error => {
+        console.error('Error al buscar ubicaciones:', error);
+        setUbicaciones([]);
+      });
   };
 
   useEffect(() => {
@@ -113,15 +193,6 @@ export const DetalleInventarioSL = ({ navigation, route }) => {
     console.log('lote...', searchDetalleInv)
   }, []);
 
-  /* useEffect(() => {
-        
-        if (dataComplete.length > 0) {
-            console.log('ya trae datos')
-        } else {
-            fetchDataDetalleInvSL(route.params.ItemCode, route.params.WhsCode, route.params.GestionItem, route.params.IdCode, route.params.conEscaner)
-        }
-        
-    }, []); */
 
   const renderFooter = () => {
     return isLoading ? (
@@ -263,14 +334,40 @@ export const DetalleInventarioSL = ({ navigation, route }) => {
             Almacen:{' '}
             <Text style={styles.tituloListItemData}>{item.WhsCode}</Text>
           </Text>
-          <Text
-            style={{
-              ...styles.tituloListItem,
-              fontSize: windowsWidth > 500 ? 24 : 20,
-            }}>
-            Ubicacion:{' '}
-            <Text style={styles.tituloListItemData}>{item.BinCode}</Text>
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text
+              style={{
+                ...styles.tituloListItem,
+                fontSize: windowsWidth > 500 ? 24 : 20,
+                marginRight: 5,
+              }}
+            >
+              Ubicación:
+            </Text>
+
+            <TouchableOpacity
+              onPress={() => {
+                setModalUbicaciones(true);
+                setLoteSeleccionado(item);
+              }}
+              style={{
+                justifyContent: 'center',
+              }}
+            >
+              {item.BinCode ? (
+                <Text style={styles.tituloListItemData}>{item.BinCode}</Text>
+              ) : (
+                <Icon
+                  raised
+                  name="plus"
+                  type="font-awesome"
+                  size={20}
+                  color="#FF0000"
+                  containerStyle={{ marginTop: 2, left: 15 }}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
           <Text
             style={{
               ...styles.tituloListItem,
@@ -666,6 +763,102 @@ export const DetalleInventarioSL = ({ navigation, route }) => {
           </View>
         </View>
       </Modal>
+
+      {/* Modal para cargar las ubicaciones */}
+      <Modal isVisible={modalUbicaciones} animationInTiming={1000}>
+        <View style={{
+          backgroundColor: '#fff',
+          borderRadius: 10,
+          padding: 20,
+          margin: '10%',
+          height: '100%'
+        }}>
+          <Text style={{ fontSize: 24, textAlign: 'center', marginBottom: 20, color: '#000' }}>
+            Actualizar ubicación
+          </Text>
+
+          <TextInput
+            placeholder="Buscar ubicación..."
+            value={searchText}
+            onChangeText={buscarUbicaciones}
+            style={{
+              borderColor: '#ccc',
+              borderWidth: 1,
+              borderRadius: 8,
+              padding: 10,
+              marginBottom: 15,
+              color: '#000'
+            }}
+            placeholderTextColor={'#cdcdcd'}
+          />
+
+          <FlatList
+            keyboardShouldPersistTaps="handled"
+            data={ubicaciones}
+            keyExtractor={(item) => item.AbsEntry.toString()}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                onPress={() => {
+                  setUbicacionSeleccionada(item)
+                }}
+                style={{
+                  padding: 10,
+                  backgroundColor: ubicacionSeleccionada?.AbsEntry === item.AbsEntry ? '#D0E6FF' : '#F0F0F0',
+                  marginBottom: 8,
+                  borderRadius: 6,
+                  maxHeight: 400
+                }}
+              >
+                <Text style={{ color: '#9c9c9c' }}>{item.BinCode}</Text>
+              </TouchableOpacity>
+            )}
+            style={{ maxHeight: 200 }}
+          />
+
+          <View style={{ marginTop: 20 }}>
+            <Button
+              titleStyle={{ color: '#ffff' }}
+              title="Guardar"
+              onPress={() => {
+                Alert.alert(
+                  'Advertencia',
+                  '¿Estas seguro de actualizar la ubicacion?',
+                  [
+                    ,
+                    {
+                      text: 'Aceptar',
+                      onPress: () => {
+                        setModalUbicaciones(false);
+                        actualizarUbicacion()
+                      },
+                    },
+                    {
+                      text: 'Cancelar',
+                      onPress: () => console.log('Cancel Pressed'),
+                      style: 'cancel',
+                    },
+                  ],
+                );
+
+
+              }}
+              buttonStyle={{ backgroundColor: '#3B5998', marginBottom: 10 }}
+            />
+            <Button
+              titleStyle={{ color: '#ffff' }}
+              title="Cancelar"
+              onPress={() => {
+                setModalUbicaciones(false)
+                setUbicacionSeleccionada(null)
+                setUbicaciones([])
+                setSearchText('')
+                setLoteSeleccionado([])
+              }}
+              buttonStyle={{ backgroundColor: '#DC3545' }}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -678,6 +871,7 @@ const styles = StyleSheet.create({
   },
   tituloListItemData: {
     fontWeight: 'normal',
+    fontSize: 20,
     color: '#000',
     textDecorationLine: 'underline',
   },
@@ -704,5 +898,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#afbdd4', // Change the color as needed
     borderRadius: 28,
     elevation: 8, // Android shadow
-  },
+  }
 });
