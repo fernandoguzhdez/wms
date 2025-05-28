@@ -349,6 +349,7 @@ export const DetalleInventarioSL = ({ navigation, route }) => {
               onPress={() => {
                 setModalUbicaciones(true);
                 setLoteSeleccionado(item);
+                buscarUbicaciones('')
               }}
               style={{
                 justifyContent: 'center',
@@ -773,24 +774,90 @@ export const DetalleInventarioSL = ({ navigation, route }) => {
           margin: '10%',
           height: '100%'
         }}>
-          <Text style={{ fontSize: 24, textAlign: 'center', marginBottom: 20, color: '#000' }}>
-            Actualizar ubicación
-          </Text>
-
-          <TextInput
-            placeholder="Buscar ubicación..."
-            value={searchText}
-            onChangeText={buscarUbicaciones}
-            style={{
-              borderColor: '#ccc',
-              borderWidth: 1,
-              borderRadius: 8,
-              padding: 10,
-              marginBottom: 15,
-              color: '#000'
+          {/* Botón "X" para cerrar el modal */}
+          <TouchableOpacity
+            onPress={() => {
+              setModalUbicaciones(false);
+              setUbicacionSeleccionada(null);
+              setUbicaciones([]);
+              setSearchText('');
+              setLoteSeleccionado([]);
             }}
-            placeholderTextColor={'#cdcdcd'}
-          />
+            style={{
+              position: 'absolute',
+              top: 10,
+              right: 10,
+              zIndex: 1,
+              padding: 5
+            }}
+          >
+            <Text style={{ fontSize: 20, color: '#999' }}>✕</Text>
+          </TouchableOpacity>
+
+          {/* Título + Icono Guardar */}
+          <View style={{
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginBottom: 20
+          }}>
+            <Text style={{ fontSize: 24, color: '#000', marginRight: 10 }}>
+              Actualizar ubicación
+            </Text>
+          </View>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginBottom: 15,
+            }}
+          >
+            <TextInput
+              placeholder="Buscar ubicación..."
+              value={searchText}
+              onChangeText={buscarUbicaciones}
+              style={{
+                flex: 1, // para que tome el ancho disponible
+                borderColor: '#ccc',
+                borderWidth: 1,
+                borderRadius: 8,
+                padding: 10,
+                color: '#000',
+                marginRight: 10, // separación entre el input y el icono
+              }}
+              placeholderTextColor="#cdcdcd"
+            />
+
+            <TouchableOpacity
+              onPress={() => {
+                Alert.alert(
+                  'Advertencia',
+                  '¿Estas seguro de actualizar la ubicación?',
+                  [
+                    {
+                      text: 'Aceptar',
+                      onPress: () => {
+                        setModalUbicaciones(false);
+                        actualizarUbicacion();
+                      },
+                    },
+                    {
+                      text: 'Cancelar',
+                      style: 'cancel',
+                    },
+                  ],
+                );
+              }}
+              disabled={!ubicacionSeleccionada} // opcional: deshabilitar si no hay selección
+            >
+              <Icon
+                name="save"
+                type="font-awesome"
+                color={ubicacionSeleccionada ? "#3B5998" : "#ccc"}
+                size={28}
+              />
+            </TouchableOpacity>
+          </View>
 
           <FlatList
             keyboardShouldPersistTaps="handled"
@@ -809,56 +876,14 @@ export const DetalleInventarioSL = ({ navigation, route }) => {
                   maxHeight: 400
                 }}
               >
-                <Text style={{ color: '#9c9c9c' }}>{item.BinCode}</Text>
+                <Text style={{ color: '#000', fontWeight: 'bold' }}>{item.BinCode}</Text>
               </TouchableOpacity>
             )}
-            style={{ maxHeight: 200 }}
+            style={{ height: '100%' }}
           />
-
-          <View style={{ marginTop: 20 }}>
-            <Button
-              titleStyle={{ color: '#ffff' }}
-              title="Guardar"
-              onPress={() => {
-                Alert.alert(
-                  'Advertencia',
-                  '¿Estas seguro de actualizar la ubicacion?',
-                  [
-                    ,
-                    {
-                      text: 'Aceptar',
-                      onPress: () => {
-                        setModalUbicaciones(false);
-                        actualizarUbicacion()
-                      },
-                    },
-                    {
-                      text: 'Cancelar',
-                      onPress: () => console.log('Cancel Pressed'),
-                      style: 'cancel',
-                    },
-                  ],
-                );
-
-
-              }}
-              buttonStyle={{ backgroundColor: '#3B5998', marginBottom: 10 }}
-            />
-            <Button
-              titleStyle={{ color: '#ffff' }}
-              title="Cancelar"
-              onPress={() => {
-                setModalUbicaciones(false)
-                setUbicacionSeleccionada(null)
-                setUbicaciones([])
-                setSearchText('')
-                setLoteSeleccionado([])
-              }}
-              buttonStyle={{ backgroundColor: '#DC3545' }}
-            />
-          </View>
         </View>
       </Modal>
+
     </View>
   );
 };
