@@ -4,7 +4,7 @@ import CustomDrawer from '../componentes/CustomDrawer';
 //Screens
 import Menu from './Menu';
 import Inventario from './Inventario/Inventario';
-import Compras from './Compras';
+import Compras from './Compras/Compras';
 import Ventas from './Ventas';
 import MenuSettings from '../screens/Settings/MenuSettings'
 //React

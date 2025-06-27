@@ -1,0 +1,605 @@
+import React, { useEffect, useState, useContext } from 'react';
+import {
+    View,
+    Text,
+    FlatList,
+    ActivityIndicator,
+    StyleSheet,
+    TextInput,
+    Modal,
+    TouchableOpacity,
+    Alert,
+} from 'react-native';
+import axios from 'axios';
+import { AuthContext } from '../../contex/AuthContext';
+import Icon from 'react-native-vector-icons/Feather';
+import { useNavigation } from '@react-navigation/native';
+import { SelectList } from 'react-native-dropdown-select-list';
+import { LinearProgress } from 'react-native-elements';
+
+
+
+export const DetalleCompras = ({ route }) => {
+    const { tokenInfo, url } = useContext(AuthContext);
+    const { documento } = route.params;
+    const navigation = useNavigation();
+    const [detalles, setDetalles] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [searchText, setSearchText] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+    const [modalVisible, setModalVisible] = useState(false);
+    const [articuloNombre, setArticuloNombre] = useState('');
+    const [cantidad, setCantidad] = useState('');
+    const [ubicaciones, setUbicaciones] = useState([]);
+    const [ubicacionSeleccionada, setUbicacionSeleccionada] = useState(null);
+    const [cargandoUbicaciones, setCargandoUbicaciones] = useState(false);
+    const [articuloSeleccionado, setArticuloSeleccionado] = useState(null);
+    const [enviando, setEnviando] = useState(false);
+
+
+
+    useEffect(() => {
+        cargarDetalles();
+    }, []);
+
+    const handleGuardarArticulo = async () => {
+        if (!articuloSeleccionado) {
+            Alert.alert('Error', 'No hay artículo seleccionado.');
+            return; // 👈 evita continuar
+        }
+
+        if (!cantidad.trim() || isNaN(cantidad) || Number(cantidad) <= 0) {
+            Alert.alert('Campo requerido', 'Por favor ingresa una cantidad válida.');
+            return; // 👈 evita continuar
+        }
+
+        if (!ubicacionSeleccionada) {
+            Alert.alert('Campo requerido', 'Por favor selecciona una ubicación.');
+            return; // 👈 evita continuar
+        }
+
+        const ubicacionObj = ubicaciones.find((u) => u.key === ubicacionSeleccionada);
+        if (!ubicacionObj) {
+            Alert.alert('Error', 'No se pudo encontrar el código de ubicación.');
+            return; // 👈 evita continuar
+        }
+
+        const body = {
+            baseLineNum: articuloSeleccionado.LineNum ?? 0,
+            binCode: ubicacionObj.value,
+            binEntry: Number(ubicacionSeleccionada),
+            docEntry: articuloSeleccionado.DocEntry ?? 0,
+            gestionItem: articuloSeleccionado.GestionItem ?? 'I',
+            idCode: '',
+            itemCode: articuloSeleccionado.ItemCode ?? '',
+            quantityCounted: Number(cantidad),
+            serManLineNum: 0,
+            snbIndex: 0,
+            whsCode: articuloSeleccionado.WhsCode ?? '',
+        };
+
+        try {
+            await axios.put(`${url}/api/Purchase/Update_PurchaseSerLt`, body, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${tokenInfo.token}`,
+                },
+            });
+
+            Alert.alert('Éxito', 'Artículo agregado correctamente.');
+            setModalVisible(false); // ✅ solo se cierra si todo salió bien
+            setCantidad('');
+            setUbicacionSeleccionada(null);
+            setArticuloSeleccionado(null);
+        } catch (error) {
+            console.error('Error al guardar artículo:', error);
+            Alert.alert('Error', 'No se pudo guardar el artículo. Intenta nuevamente.');
+        }
+    };
+
+
+
+
+    const abrirFormulario = async (item) => {
+        setArticuloSeleccionado(item);
+        setArticuloNombre(item.ItemName || '');
+        setCantidad('');
+        setUbicacionSeleccionada(null);
+        setModalVisible(true);
+        setCargandoUbicaciones(true);
+
+        try {
+            const response = await axios.get(`${url}/api/Inventory/Get_WhareHouse`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${tokenInfo.token}`,
+                },
+            });
+
+            const almacenes = response.data.owhs;
+            const almacenActual = almacenes.find((alm) => alm.whsCode === item.WhsCode);
+
+            if (almacenActual && almacenActual.bins) {
+                const opciones = almacenActual.bins.map((bin) => ({
+                    key: bin.absEntry.toString(),
+                    value: bin.binCode,
+                }));
+                setUbicaciones(opciones);
+            } else {
+                setUbicaciones([]);
+            }
+        } catch (error) {
+            console.error('Error al obtener ubicaciones:', error);
+        } finally {
+            setCargandoUbicaciones(false);
+        }
+    };
+
+
+    const cargarDetalles = async () => {
+        try {
+            const response = await axios.get(
+                `${url}/api/Purchase/Get_Details?IdDocumentCnt=${documento.DocNum}`,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${tokenInfo.token}`,
+                    },
+                }
+            );
+
+            if (response.data && response.data.POR1) {
+                setDetalles(response.data.POR1);
+            } else {
+                console.warn('No se encontraron detalles');
+            }
+        } catch (error) {
+            console.error('Error al cargar detalles:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const enviarArticulos = () => {
+        Alert.alert(
+            'Confirmar envío',
+            '¿Estás seguro de que deseas enviar este documento?',
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Enviar',
+                    onPress: async () => {
+                        setEnviando(true);
+                        try {
+                            await axios.post(
+                                `${url}/api/Purchase/Close?IdCounted=${documento.DocNum}`,
+                                {},
+                                {
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        Authorization: `Bearer ${tokenInfo.token}`,
+                                    },
+                                }
+                            );
+                            Alert.alert('Éxito', 'Documento enviado correctamente');
+                        } catch (error) {
+                            console.error('Error al enviar documento:', error);
+                            Alert.alert('Error', 'No se pudo enviar el documento');
+                        } finally {
+                            setEnviando(false);
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+
+
+
+    // Filtrado
+    const detallesFiltrados = detalles.filter((item) => {
+        const search = searchText.toLowerCase();
+        const itemCode = item.ItemCode?.toLowerCase() || '';
+        const itemName = item.ItemName?.toLowerCase() || '';
+        return itemCode.includes(search) || itemName.includes(search);
+    });
+
+
+    // Paginación
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const detallesPaginados = detallesFiltrados.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(detallesFiltrados.length / itemsPerPage);
+
+    const renderItem = ({ item }) => (
+        <View style={styles.item}>
+            <View style={{ flex: 1 }}>
+                <TouchableOpacity
+                    onPress={() => {
+                        if (item.GestionItem === 'S' || item.GestionItem === 'L') {
+                            navigation.navigate('SeriesLotesCompras', { detalle: item });
+                        }
+                    }}
+                >
+                    <Text style={styles.itemTitle}>
+                        {item.ItemCode} - {item.ItemName}
+                    </Text>
+                    <Text style={styles.itemDetail}>Código de barras: {item.BarCode}</Text>
+                    <Text style={styles.itemDetail}>Cantidad solicitada: {item.Quantity}</Text>
+                    <Text style={styles.itemDetail}>Cantidad en almacén: {item.InWhsQty}</Text>
+                    <Text style={styles.itemDetail}>Cantidad contada: {item.CountQty}</Text>
+                    <Text style={styles.itemDetail}>Cantidad total: {item.TotalQty}</Text>
+                    <Text style={styles.itemDetail}>Almacén: {item.WhsCode}</Text>
+                    <Text style={styles.itemDetail}>Gestión: {item.GestionItem}</Text>
+                    <Text style={styles.itemDetail}>
+                        Ubicación destino: {item.ToBinCode || 'N/A'}
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+            {item.GestionItem === 'I' && (
+                <TouchableOpacity
+                    style={styles.addButton}
+                    onPress={() => abrirFormulario(item)}
+                >
+                    <Icon name="plus-circle" size={35} color="#007bff" />
+                </TouchableOpacity>
+            )}
+        </View>
+
+
+    );
+
+
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#007bff" />
+                <Text>Cargando detalles...</Text>
+            </View>
+        );
+    }
+
+    return (
+        <View style={styles.container}>
+            <View style={styles.headerRow}>
+                <Text style={styles.header}>
+                    Detalles de la compra #{documento.DocNum}
+                </Text>
+
+                <TouchableOpacity
+                    style={styles.sendButton}
+                    onPress={enviarArticulos}
+                >
+                    <Icon name="send" size={18} color="#fff" />
+                    <Text style={styles.sendButtonText}> Enviar</Text>
+                </TouchableOpacity>
+            </View>
+            {enviando && (
+                <LinearProgress
+                    color="#007bff"
+                    variant="indeterminate"
+                    style={styles.progressBar}
+                />
+            )}
+
+
+            <View style={styles.searchContainer}>
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder="Buscar artículo..."
+                    placeholderTextColor="#666"
+                    value={searchText}
+                    onChangeText={(text) => {
+                        setSearchText(text);
+                        setCurrentPage(1);
+                    }}
+                />
+                <TouchableOpacity
+                    style={styles.scanButton}
+                    onPress={() => console.log('Escanear')}
+                    activeOpacity={0.6}
+                >
+                    <Icon name="camera" size={22} color="#007bff" />
+                </TouchableOpacity>
+
+            </View>
+
+
+
+            <FlatList
+                data={detallesPaginados}
+                keyExtractor={(item) => `${item.DocEntry}-${item.LineNum}`}
+                renderItem={renderItem}
+                ListEmptyComponent={<Text>No hay artículos para mostrar</Text>}
+                contentContainerStyle={{ paddingBottom: 20 }}
+            />
+
+            <View style={styles.paginationContainer}>
+                <Text style={styles.paginationText}>
+                    Página {currentPage} de {totalPages}
+                </Text>
+
+                <View style={styles.paginationButtons}>
+                    <TouchableOpacity
+                        style={[styles.iconButton, currentPage === 1 && styles.disabled]}
+                        onPress={() => setCurrentPage(1)}
+                        disabled={currentPage === 1}
+                    >
+                        <Icon name="chevrons-left" size={22} color="#fff" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.iconButton, currentPage === 1 && styles.disabled]}
+                        onPress={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
+                        disabled={currentPage === 1}
+                    >
+                        <Icon name="chevron-left" size={24} color="#fff" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.iconButton, currentPage === totalPages && styles.disabled]}
+                        onPress={() => currentPage < totalPages && setCurrentPage(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                    >
+                        <Icon name="chevron-right" size={24} color="#fff" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.iconButton, currentPage === totalPages && styles.disabled]}
+                        onPress={() => setCurrentPage(totalPages)}
+                        disabled={currentPage === totalPages}
+                    >
+                        <Icon name="chevrons-right" size={22} color="#fff" />
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            <Modal visible={modalVisible} animationType="slide" transparent>
+                <View style={styles.modalBackground}>
+                    <View style={styles.modalContainer}>
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={() => setModalVisible(false)}
+                        >
+                            <Icon name="x" size={24} color="#000" />
+                        </TouchableOpacity>
+
+                        <Text style={styles.modalTitle}>Agregar artículo</Text>
+
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Nombre del artículo"
+                            placeholderTextColor="#666"
+                            value={articuloNombre}
+                            onChangeText={setArticuloNombre}
+                            editable={false}
+                        />
+
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Cantidad"
+                            placeholderTextColor="#666"
+                            keyboardType="numeric"
+                            value={cantidad}
+                            onChangeText={setCantidad}
+                        />
+
+                        {cargandoUbicaciones ? (
+                            <ActivityIndicator color="#007bff" />
+                        ) : (
+                            <SelectList
+                                setSelected={setUbicacionSeleccionada}
+                                data={ubicaciones}
+                                placeholder="Selecciona una ubicación"
+                                boxStyles={styles.selectBox}
+                                dropdownStyles={styles.selectDropdown}
+                                search={false}
+                            />
+                        )}
+
+                        <TouchableOpacity
+                            style={styles.saveButton}
+                            onPress={() => {
+                                handleGuardarArticulo()
+                            }}
+                        >
+                            <Text style={styles.saveButtonText}>Guardar</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+        </View>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        padding: 16,
+        flex: 1,
+        backgroundColor: '#fff',
+    },
+    header: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 12,
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        marginBottom: 12,
+        paddingHorizontal: 10,
+    },
+
+    searchInput: {
+        flex: 1,
+        paddingVertical: 10,
+        fontSize: 20,
+        paddingRight: 10,
+        color: '#000',
+    },
+    scanButton: {
+        padding: 6,
+        paddingRight: 2, // o 4, para alinear visualmente
+    },
+    item: {
+        position: 'relative',
+        padding: 12,
+        backgroundColor: '#f8f8f8',
+        borderRadius: 8,
+        marginBottom: 12,
+    },
+    title: {
+        fontWeight: 'bold',
+        marginBottom: 4,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    paginationContainer: {
+        marginTop: 10,
+        alignItems: 'center',
+    },
+    paginationText: {
+        marginBottom: 6,
+    },
+    paginationButtons: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 10,
+    },
+    iconButton: {
+        padding: 10,
+        backgroundColor: '#007bff',
+        borderRadius: 8,
+        marginHorizontal: 4,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    disabled: {
+        backgroundColor: '#aaa',
+    },
+    itemHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 6,
+    },
+    itemTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#000',
+        marginRight: 30, // espacio para que no lo pise el ícono
+    },
+    itemDetail: {
+        fontSize: 20,
+        color: '#333',
+        marginBottom: 2,
+    }, modalBackground: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContainer: {
+        width: '90%',
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 20,
+        elevation: 5,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 16,
+        color: '#000',
+    },
+    input: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        padding: 10,
+        borderRadius: 8,
+        marginBottom: 12,
+        color: '#000',
+    },
+    selectBox: {
+        borderColor: '#ccc',
+        borderRadius: 8,
+        marginBottom: 12,
+    },
+    selectDropdown: {
+        borderColor: '#ccc',
+        borderRadius: 8,
+    },
+    saveButton: {
+        backgroundColor: '#007bff',
+        paddingVertical: 10,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    saveButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        padding: 6,
+        zIndex: 1,
+    },
+    addButton: {
+        position: 'absolute',
+        top: 12,
+        right: 12,
+    },
+    addButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    }, headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+    },
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+    },
+
+    header: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#000',
+        flex: 1,
+        marginRight: 8,
+    },
+    sendButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#17a2b8',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 8,
+    },
+    sendButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+    progressBar: {
+        marginVertical: 10,
+        height: 6,
+        borderRadius: 4,
+    },
+
+
+});
