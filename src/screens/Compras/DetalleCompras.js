@@ -16,6 +16,9 @@ import Icon from 'react-native-vector-icons/Feather';
 import { useNavigation } from '@react-navigation/native';
 import { SelectList } from 'react-native-dropdown-select-list';
 import { LinearProgress } from 'react-native-elements';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
+
 
 
 
@@ -36,12 +39,22 @@ export const DetalleCompras = ({ route }) => {
     const [cargandoUbicaciones, setCargandoUbicaciones] = useState(false);
     const [articuloSeleccionado, setArticuloSeleccionado] = useState(null);
     const [enviando, setEnviando] = useState(false);
+    const [ubicacionesFiltradas, setUbicacionesFiltradas] = useState([]);
 
 
 
-    useEffect(() => {
-        cargarDetalles();
-    }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            cargarDetalles(); // <- esta es tu función para refrescar los datos
+
+            // Opcionalmente limpia algo al salir:
+            return () => {
+                // cleanup si es necesario
+            };
+        }, [])
+    );
+
 
     const handleGuardarArticulo = async () => {
         if (!articuloSeleccionado) {
@@ -92,14 +105,12 @@ export const DetalleCompras = ({ route }) => {
             setCantidad('');
             setUbicacionSeleccionada(null);
             setArticuloSeleccionado(null);
+            cargarDetalles();
         } catch (error) {
             console.error('Error al guardar artículo:', error);
             Alert.alert('Error', 'No se pudo guardar el artículo. Intenta nuevamente.');
         }
     };
-
-
-
 
     const abrirFormulario = async (item) => {
         setArticuloSeleccionado(item);
@@ -110,31 +121,31 @@ export const DetalleCompras = ({ route }) => {
         setCargandoUbicaciones(true);
 
         try {
-            const response = await axios.get(`${url}/api/Inventory/Get_WhareHouse`, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${tokenInfo.token}`,
-                },
-            });
+            const response = await axios.get(
+                `${url}/api/MasterDetails/Get_Bins`,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${tokenInfo.token}`,
+                    },
+                }
+            );
 
-            const almacenes = response.data.owhs;
-            const almacenActual = almacenes.find((alm) => alm.whsCode === item.WhsCode);
+            const opciones = response.data.OBIN.map((bin) => ({
+                key: bin.AbsEntry.toString(),
+                value: bin.BinCode,
+            }));
 
-            if (almacenActual && almacenActual.bins) {
-                const opciones = almacenActual.bins.map((bin) => ({
-                    key: bin.absEntry.toString(),
-                    value: bin.binCode,
-                }));
-                setUbicaciones(opciones);
-            } else {
-                setUbicaciones([]);
-            }
+            setUbicaciones(opciones);
         } catch (error) {
             console.error('Error al obtener ubicaciones:', error);
+            Alert.alert('Error', 'No se pudieron cargar las ubicaciones');
+            setUbicaciones([]);
         } finally {
             setCargandoUbicaciones(false);
         }
     };
+
 
 
     const cargarDetalles = async () => {
@@ -394,9 +405,13 @@ export const DetalleCompras = ({ route }) => {
                                 setSelected={setUbicacionSeleccionada}
                                 data={ubicaciones}
                                 placeholder="Selecciona una ubicación"
+                                searchPlaceholder="Buscar ubicación..."
+                                save="key"
+                                search={true}
                                 boxStyles={styles.selectBox}
                                 dropdownStyles={styles.selectDropdown}
-                                search={false}
+                                inputStyles={{ color: '#000' }}
+                                dropdownTextStyles={{ color: '#000' }}
                             />
                         )}
 
@@ -450,7 +465,7 @@ const styles = StyleSheet.create({
     item: {
         position: 'relative',
         padding: 12,
-        backgroundColor: '#f8f8f8',
+        backgroundColor: '#e0e0e0',
         borderRadius: 8,
         marginBottom: 12,
     },
@@ -500,7 +515,7 @@ const styles = StyleSheet.create({
     },
     itemDetail: {
         fontSize: 20,
-        color: '#333',
+        color: '#000',
         marginBottom: 2,
     }, modalBackground: {
         flex: 1,
@@ -537,12 +552,14 @@ const styles = StyleSheet.create({
     selectDropdown: {
         borderColor: '#ccc',
         borderRadius: 8,
+        maxHeight: 200
     },
     saveButton: {
         backgroundColor: '#007bff',
         paddingVertical: 10,
         borderRadius: 8,
         alignItems: 'center',
+        marginTop: 20
     },
     saveButtonText: {
         color: '#fff',

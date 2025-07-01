@@ -68,27 +68,22 @@ export const SeriesLotesCompras = ({ route }) => {
     useEffect(() => {
         const obtenerUbicaciones = async () => {
             try {
-                const response = await axios.get(`${url}/api/Inventory/Get_WhareHouse`, {
+                const response = await axios.get(`${url}/api/MasterDetails/Get_Bins`, {
                     headers: {
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${tokenInfo.token}`,
                     },
                 });
 
-                const almacenes = response.data.owhs;
-                const almacenActual = almacenes.find((alm) => alm.whsCode === detalle.WhsCode);
+                const opciones = response.data.OBIN.map((bin) => ({
+                    key: bin.AbsEntry.toString(),
+                    value: bin.BinCode,
+                }));
 
-                if (almacenActual && almacenActual.bins) {
-                    const opciones = almacenActual.bins.map((bin) => ({
-                        key: bin.absEntry.toString(),
-                        value: bin.binCode,
-                    }));
-                    setUbicaciones(opciones);
-                } else {
-                    setUbicaciones([]);
-                }
+                setUbicaciones(opciones);
             } catch (error) {
                 console.error('Error al obtener ubicaciones:', error);
+                setUbicaciones([]);
             } finally {
                 setCargandoUbicaciones(false);
             }
@@ -96,6 +91,7 @@ export const SeriesLotesCompras = ({ route }) => {
 
         obtenerUbicaciones();
     }, []);
+
 
     const listaFiltrada = listaSeriesLotes.filter(item =>
         item.idCode.toLowerCase().includes(searchText.toLowerCase())
@@ -426,10 +422,15 @@ export const SeriesLotesCompras = ({ route }) => {
                                 setSelected={setUbicacionSeleccionada}
                                 data={ubicaciones}
                                 placeholder="Selecciona una ubicación"
+                                searchPlaceholder="Buscar ubicación..."
+                                search={true} // 🔍 activa búsqueda local
+                                save="key"
                                 boxStyles={styles.selectBox}
                                 dropdownStyles={styles.selectDropdown}
-                                search={false}
+                                inputStyles={{ color: '#000' }}
+                                dropdownTextStyles={{ color: '#000' }}
                             />
+
                         )}
 
                         <TouchableOpacity
@@ -464,8 +465,8 @@ const styles = StyleSheet.create({
     modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 16, color: '#000' },
     input: { borderWidth: 1, borderColor: '#ccc', padding: 10, borderRadius: 8, marginBottom: 12, color: '#000' },
     selectBox: { borderColor: '#ccc', borderRadius: 8, marginBottom: 12 },
-    selectDropdown: { borderColor: '#ccc', borderRadius: 8 },
-    saveButton: { backgroundColor: '#007bff', paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+    selectDropdown: { borderColor: '#ccc', borderRadius: 8, maxHeight: 200 },
+    saveButton: { backgroundColor: '#007bff', paddingVertical: 10, borderRadius: 8, alignItems: 'center', marginTop: 20 },
     saveButtonText: { color: '#fff', fontWeight: 'bold' },
     closeButton: { position: 'absolute', top: 10, right: 10, padding: 6, zIndex: 1 },
     searchInput: {
@@ -492,7 +493,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center', // Esto alinea verticalmente
-        backgroundColor: '#f9f9f9',
+        backgroundColor: '#e0e0e0',
         padding: 12,
         marginBottom: 10,
         borderRadius: 8,
@@ -507,8 +508,8 @@ const styles = StyleSheet.create({
         paddingRight: 10,
     },
     line: {
-        fontSize: 20,
-        color: '#333',
+        fontSize: 24,
+        color: '#000',
         marginBottom: 4,
         flexWrap: 'wrap',
     },

@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     item: {
         marginBottom: 12,
         padding: 12,
-        backgroundColor: '#f8f8f8',
+        backgroundColor: '#e0e0e0',
         borderRadius: 8,
     },
     title: {
@@ -294,14 +294,14 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     }, itemTitle: {
-        fontSize: 18,
+        fontSize: 24,
         fontWeight: 'bold',
         color: '#000',
         marginBottom: 6,
     },
     itemDetail: {
-        fontSize: 15,
-        color: '#333',
+        fontSize: 20,
+        color: '#000',
         marginBottom: 2,
     }, hiddenRow: {
         alignItems: 'center',
