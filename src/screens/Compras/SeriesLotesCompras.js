@@ -149,6 +149,11 @@ export const SeriesLotesCompras = ({ route }) => {
                                         )
                                 );
                                 setListaSeriesLotes(nuevaLista);
+
+                                Alert.alert(
+                                    'Eliminado',
+                                    `${esSerie ? 'La serie' : esLote ? 'El lote' : 'El registro'} ${item.idCode} fue eliminado correctamente.`
+                                );
                             } else {
                                 setCargandoLista(true);
                                 await cargarSeriesYLotes();

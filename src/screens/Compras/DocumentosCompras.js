@@ -14,10 +14,7 @@ import { AuthContext } from '../../contex/AuthContext';
 import Icon from 'react-native-vector-icons/Feather';
 import { useNavigation } from '@react-navigation/native';
 import { SwipeListView } from 'react-native-swipe-list-view';
-
-
-
-
+import { BackHandler } from 'react-native';
 
 export const DocumentosCompras = () => {
     const { tokenInfo, url } = useContext(AuthContext);
@@ -27,6 +24,15 @@ export const DocumentosCompras = () => {
     const [searchText, setSearchText] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+    const [enviando, setEnviando] = useState(false);
+
+
+    useEffect(() => {
+        if (enviando) {
+            const backHandler = BackHandler.addEventListener('hardwareBackPress', () => true);
+            return () => backHandler.remove(); // limpia cuando deja de enviar
+        }
+    }, [enviando]);
 
     useEffect(() => {
         cargarDocumentos();
@@ -59,18 +65,16 @@ export const DocumentosCompras = () => {
     const enviarDocumento = (item) => {
         Alert.alert(
             'Confirmar envío',
-            `¿Estás seguro de que deseas enviar el documento #${item.DocNum}?`,
+            `¿Estás seguro de que deseas enviar el documento #${item.DocEntry}?`,
             [
-                {
-                    text: 'Cancelar',
-                    style: 'cancel',
-                },
+                { text: 'Cancelar', style: 'cancel' },
                 {
                     text: 'Enviar',
                     onPress: async () => {
+                        setEnviando(true); // 🚫 Bloquea la pantalla
                         try {
                             const response = await axios.get(
-                                `${url}/api/Purchase/Close?IdCounted=${item.DocNum}`,
+                                `${url}/api/Purchase/Close?IdCounted=${item.DocEntry}`,
                                 {
                                     headers: {
                                         'Content-Type': 'application/json',
@@ -78,18 +82,20 @@ export const DocumentosCompras = () => {
                                     },
                                 }
                             );
-
-                            Alert(`Documento #${item.DocNum} enviado correctamente`);
+                            Alert.alert('Éxito', `Documento #${item.DocEntry} enviado correctamente`);
+                            cargarDocumentos(); // 🔄 refresca
                         } catch (error) {
                             console.error('Error al enviar documento:', error);
-                            Alert('Error al enviar documento');
+                            Alert.alert('Error', 'No se pudo enviar el documento');
+                        } finally {
+                            setEnviando(false); // ✅ Desbloquea la pantalla
                         }
                     },
-                    style: 'default',
                 },
             ]
         );
     };
+
 
 
 
@@ -218,7 +224,12 @@ export const DocumentosCompras = () => {
                     </TouchableOpacity>
                 </View>
             </View>
-
+            {enviando && (
+                <View style={styles.blockingOverlay}>
+                    <ActivityIndicator size="large" color="#fff" />
+                    <Text style={styles.blockingText}>Enviando documento...</Text>
+                </View>
+            )}
 
         </View>
     );
@@ -293,7 +304,8 @@ const styles = StyleSheet.create({
         marginHorizontal: 4,
         justifyContent: 'center',
         alignItems: 'center',
-    }, itemTitle: {
+    },
+    itemTitle: {
         fontSize: 24,
         fontWeight: 'bold',
         color: '#000',
@@ -326,6 +338,25 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginLeft: 6,
     },
+    blockingOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 9999,
+        elevation: 10, // para Android
+    },
+    blockingText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginTop: 12,
+    },
+
 
 
 });

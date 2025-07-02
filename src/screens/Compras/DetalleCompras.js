@@ -18,6 +18,7 @@ import { SelectList } from 'react-native-dropdown-select-list';
 import { LinearProgress } from 'react-native-elements';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
+import { BackHandler } from 'react-native';
 
 
 
@@ -42,7 +43,12 @@ export const DetalleCompras = ({ route }) => {
     const [ubicacionesFiltradas, setUbicacionesFiltradas] = useState([]);
 
 
-
+    useEffect(() => {
+        if (enviando) {
+            const backHandler = BackHandler.addEventListener('hardwareBackPress', () => true);
+            return () => backHandler.remove(); // limpia cuando deja de enviar
+        }
+    }, [enviando]);
 
     useFocusEffect(
         useCallback(() => {
@@ -151,7 +157,7 @@ export const DetalleCompras = ({ route }) => {
     const cargarDetalles = async () => {
         try {
             const response = await axios.get(
-                `${url}/api/Purchase/Get_Details?IdDocumentCnt=${documento.DocNum}`,
+                `${url}/api/Purchase/Get_Details?IdDocumentCnt=${documento.DocEntry}`,
                 {
                     headers: {
                         'Content-Type': 'application/json',
@@ -184,7 +190,7 @@ export const DetalleCompras = ({ route }) => {
                         setEnviando(true);
                         try {
                             await axios.post(
-                                `${url}/api/Purchase/Close?IdCounted=${documento.DocNum}`,
+                                `${url}/api/Purchase/Close?IdCounted=${documento.DocEntry}`,
                                 {},
                                 {
                                     headers: {
@@ -199,6 +205,7 @@ export const DetalleCompras = ({ route }) => {
                             Alert.alert('Error', 'No se pudo enviar el documento');
                         } finally {
                             setEnviando(false);
+                            cargarDetalles()
                         }
                     },
                 },
@@ -289,12 +296,14 @@ export const DetalleCompras = ({ route }) => {
                 </TouchableOpacity>
             </View>
             {enviando && (
-                <LinearProgress
-                    color="#007bff"
-                    variant="indeterminate"
-                    style={styles.progressBar}
-                />
+                <Modal transparent visible animationType="none">
+                    <View style={styles.blockingOverlay}>
+                        <ActivityIndicator size="large" color="#fff" />
+                        <Text style={styles.blockingText}>Enviando documento...</Text>
+                    </View>
+                </Modal>
             )}
+
 
 
             <View style={styles.searchContainer}>
@@ -617,6 +626,20 @@ const styles = StyleSheet.create({
         height: 6,
         borderRadius: 4,
     },
+    blockingOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 9999,
+    },
+    blockingText: {
+        color: '#fff',
+        marginTop: 12,
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+
 
 
 });
