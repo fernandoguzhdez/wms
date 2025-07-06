@@ -7,7 +7,8 @@ import {
     StyleSheet,
     TextInput,
     TouchableOpacity,
-    Alert
+    Alert,
+    Dimensions
 } from 'react-native';
 import axios from 'axios';
 import { AuthContext } from '../../contex/AuthContext';
@@ -15,6 +16,7 @@ import Icon from 'react-native-vector-icons/Feather';
 import { useNavigation } from '@react-navigation/native';
 import { SwipeListView } from 'react-native-swipe-list-view';
 import { BackHandler } from 'react-native';
+import { RNCamera } from 'react-native-camera';
 
 export const DocumentosCompras = () => {
     const { tokenInfo, url } = useContext(AuthContext);
@@ -25,6 +27,15 @@ export const DocumentosCompras = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
     const [enviando, setEnviando] = useState(false);
+    const [barcode, setBarcode] = useState('');
+    const [showScanner, setShowScanner] = useState(false);
+
+    const handleBarCodeRead = ({ data }) => {
+        setShowScanner(false);
+        setBarcode(data);
+        filtrarDocumento(data); // llama tu función de búsqueda aquí
+    };
+
 
 
     useEffect(() => {
@@ -73,7 +84,7 @@ export const DocumentosCompras = () => {
                     onPress: async () => {
                         setEnviando(true); // 🚫 Bloquea la pantalla
                         try {
-                            const response = await axios.get(
+                            await axios.post(
                                 `${url}/api/Purchase/Close?IdCounted=${item.DocEntry}`,
                                 {
                                     headers: {
@@ -158,16 +169,24 @@ export const DocumentosCompras = () => {
 
     return (
         <View style={styles.container}>
-            <TextInput
-                style={styles.searchInput}
-                placeholder="Buscar por proveedor..."
-                placeholderTextColor="#666"
-                value={searchText}
-                onChangeText={(text) => {
-                    setSearchText(text);
-                    setCurrentPage(1); // Reinicia a la primera página al buscar
-                }}
-            />
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={styles.searchContainer}>
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Buscar por proveedor..."
+                        placeholderTextColor="#666"
+                        value={searchText}
+                        onChangeText={(text) => {
+                            setSearchText(text);
+                            setCurrentPage(1);
+                        }}
+                    />
+                    <TouchableOpacity onPress={() => setShowScanner(true)} style={styles.cameraIcon}>
+                        <Icon name="camera" size={20} color="#007bff" />
+                    </TouchableOpacity>
+                </View>
+
+            </View>
 
             <SwipeListView
                 data={documentosPaginados}
@@ -179,6 +198,33 @@ export const DocumentosCompras = () => {
                 ListEmptyComponent={<Text>No hay documentos disponibles</Text>}
                 contentContainerStyle={{ paddingBottom: 20 }}
             />
+
+            {showScanner && (
+                <View style={styles.scannerContainer}>
+                    <RNCamera
+                        style={styles.camera}
+                        captureAudio={false}
+                        flashMode={RNCamera.Constants.FlashMode.off}
+                        onBarCodeRead={({ data }) => {
+                            setShowScanner(false);
+                            setSearchText(data);
+                            setCurrentPage(1);
+                        }}
+                        androidCameraPermissionOptions={{
+                            title: 'Permiso para usar la cámara',
+                            message: 'La app necesita acceso a tu cámara para escanear',
+                            buttonPositive: 'OK',
+                            buttonNegative: 'Cancelar',
+                        }}
+                    />
+                    <TouchableOpacity
+                        onPress={() => setShowScanner(false)}
+                        style={styles.closeScannerButton}
+                    >
+                        <Text style={{ color: '#fff', fontSize: 18 }}>Cerrar</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
 
 
             <View style={styles.paginationContainer}>
@@ -241,12 +287,20 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
     },
-    searchInput: {
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
         borderWidth: 1,
         borderColor: '#ccc',
-        padding: 10,
         borderRadius: 8,
         marginBottom: 12,
+        paddingHorizontal: 10,
+    },
+    searchInput: {
+        flex: 1,
+        paddingVertical: 10,
+        fontSize: 20,
+        paddingRight: 10,
         color: '#000',
     },
     item: {
@@ -355,6 +409,31 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         marginTop: 12,
+    },
+    scannerContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: '#000',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 9999,
+        elevation: 10,
+    },
+    camera: {
+        width: Dimensions.get('window').width * 0.9,
+        height: Dimensions.get('window').height * 0.6,
+        borderRadius: 10,
+        overflow: 'hidden',
+    },
+    closeScannerButton: {
+        marginTop: 20,
+        paddingHorizontal: 30,
+        paddingVertical: 10,
+        backgroundColor: '#007bff',
+        borderRadius: 8,
     },
 
 

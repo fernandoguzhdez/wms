@@ -34,6 +34,7 @@ import { ConfigEtiquetasDocsReciboProd } from '../screens/Produccion/Recibo De P
 import { DocumentosCompras } from '../screens/Compras/DocumentosCompras'
 import { DetalleCompras } from '../screens/Compras/DetalleCompras';
 import { SeriesLotesCompras } from '../screens/Compras/SeriesLotesCompras'
+import { ImpresionEtiquetas } from '../screens/Compras/Impresion_Etiquetas/ImpresionEtiquetas'
 
 const Stack = createNativeStackNavigator();
 
@@ -121,6 +122,7 @@ export function Navigation() {
             <Stack.Screen name="DocumentosCompras" component={DocumentosCompras} options={{ headerShown: true, title: 'Compras - Documentos', }} />
             <Stack.Screen name="DetalleCompras" component={DetalleCompras} options={{ headerShown: true, title: 'Compras - Detalle', }} />
             <Stack.Screen name="SeriesLotesCompras" component={SeriesLotesCompras} options={{ headerShown: true, title: 'Compras - Series y Lotes', }} />
+            <Stack.Screen name="ImpresionEtiquetas" component={ImpresionEtiquetas} options={{ headerShown: true, title: 'Impresion de etiquetas', }} />
 
         </Stack.Navigator>
     );

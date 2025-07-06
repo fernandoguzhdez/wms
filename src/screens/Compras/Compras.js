@@ -7,7 +7,7 @@ import { ScrollView } from 'react-native';
 
 export default function Compras({ navigation, route }) {
 
-    const {  } = useContext(AuthContext);
+    const { } = useContext(AuthContext);
     const windowsWidth = useWindowDimensions().width;
     const windowsHeight = useWindowDimensions().height;
 
@@ -20,12 +20,15 @@ export default function Compras({ navigation, route }) {
                         case 'CmpEntd':
                             navigation.navigate('DocumentosCompras');
                             break;
+                        case 'CompImp':
+                            navigation.navigate('ImpresionEtiquetas');
+                            break;
 
                         default: 0
                             break;
                     }
                 }}>
-                    <Text style={{...styles.texto, fontSize: windowsWidth > 500 ? 24: 20}}>
+                    <Text style={{ ...styles.texto, fontSize: windowsWidth > 500 ? 24 : 20 }}>
                         {item.name}
                     </Text>
                     {/* Otros elementos de la tarjeta */}
@@ -62,7 +65,7 @@ export default function Compras({ navigation, route }) {
                     data={route.params.detalleSubMenus}
                     renderItem={renderCard}
                     keyExtractor={(item, index) => index.toString()}
-                    numColumns={windowsWidth > 500 ? 3 : 2 }
+                    numColumns={windowsWidth > 500 ? 3 : 2}
                 />
             )}
         </View>

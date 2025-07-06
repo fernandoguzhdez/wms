@@ -9,6 +9,7 @@ import {
     Modal,
     TouchableOpacity,
     Alert,
+    Dimensions
 } from 'react-native';
 import axios from 'axios';
 import { AuthContext } from '../../contex/AuthContext';
@@ -19,8 +20,7 @@ import { LinearProgress } from 'react-native-elements';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 import { BackHandler } from 'react-native';
-
-
+import { RNCamera } from 'react-native-camera';
 
 
 export const DetalleCompras = ({ route }) => {
@@ -41,6 +41,8 @@ export const DetalleCompras = ({ route }) => {
     const [articuloSeleccionado, setArticuloSeleccionado] = useState(null);
     const [enviando, setEnviando] = useState(false);
     const [ubicacionesFiltradas, setUbicacionesFiltradas] = useState([]);
+    const [showScanner, setShowScanner] = useState(false);
+
 
 
     useEffect(() => {
@@ -60,6 +62,12 @@ export const DetalleCompras = ({ route }) => {
             };
         }, [])
     );
+
+    const handleBarCodeRead = ({ data }) => {
+        setShowScanner(false);
+        setSearchText(data); // esto es lo importante: llena el campo de búsqueda
+        setCurrentPage(1);   // opcional: reinicia la paginación
+    };
 
 
     const handleGuardarArticulo = async () => {
@@ -244,8 +252,8 @@ export const DetalleCompras = ({ route }) => {
                     <Text style={styles.itemTitle}>
                         {item.ItemCode} - {item.ItemName}
                     </Text>
-                    <Text style={styles.itemDetail}>Código de barras: {item.BarCode}</Text>
-                    <Text style={styles.itemDetail}>Cantidad solicitada: {item.Quantity}</Text>
+                    <Text style={styles.itemDetail}>Código de articulo: {item.BarCode}</Text>
+                    <Text style={styles.itemDetail}>Cantidad pendiente: {item.Quantity}</Text>
                     <Text style={styles.itemDetail}>Cantidad en almacén: {item.InWhsQty}</Text>
                     <Text style={styles.itemDetail}>Cantidad contada: {item.CountQty}</Text>
                     <Text style={styles.itemDetail}>Cantidad total: {item.TotalQty}</Text>
@@ -319,15 +327,39 @@ export const DetalleCompras = ({ route }) => {
                 />
                 <TouchableOpacity
                     style={styles.scanButton}
-                    onPress={() => console.log('Escanear')}
+                    onPress={() => setShowScanner(true)}
                     activeOpacity={0.6}
                 >
                     <Icon name="camera" size={22} color="#007bff" />
                 </TouchableOpacity>
-
             </View>
 
-
+            {showScanner && (
+                <View style={styles.scannerContainer}>
+                    <RNCamera
+                        style={styles.camera}
+                        captureAudio={false}
+                        flashMode={RNCamera.Constants.FlashMode.off}
+                        onBarCodeRead={({ data }) => {
+                            setShowScanner(false);
+                            setSearchText(data);
+                            setCurrentPage(1);
+                        }}
+                        androidCameraPermissionOptions={{
+                            title: 'Permiso para usar la cámara',
+                            message: 'La app necesita acceso a tu cámara para escanear',
+                            buttonPositive: 'OK',
+                            buttonNegative: 'Cancelar',
+                        }}
+                    />
+                    <TouchableOpacity
+                        onPress={() => setShowScanner(false)}
+                        style={styles.closeScannerButton}
+                    >
+                        <Text style={{ color: '#fff', fontSize: 18 }}>Cerrar</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
 
             <FlatList
                 data={detallesPaginados}
@@ -638,6 +670,31 @@ const styles = StyleSheet.create({
         marginTop: 12,
         fontSize: 18,
         fontWeight: 'bold',
+    },
+    scannerContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: '#000',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 9999,
+        elevation: 10,
+    },
+    camera: {
+        width: Dimensions.get('window').width * 0.9,
+        height: Dimensions.get('window').height * 0.6,
+        borderRadius: 10,
+        overflow: 'hidden',
+    },
+    closeScannerButton: {
+        marginTop: 20,
+        paddingHorizontal: 30,
+        paddingVertical: 10,
+        backgroundColor: '#007bff',
+        borderRadius: 8,
     },
 
 
