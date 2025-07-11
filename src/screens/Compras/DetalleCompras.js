@@ -252,15 +252,20 @@ export const DetalleCompras = ({ route }) => {
                     <Text style={styles.itemTitle}>
                         {item.ItemCode} - {item.ItemName}
                     </Text>
-                    <Text style={styles.itemDetail}>Código de articulo: {item.BarCode}</Text>
-                    <Text style={styles.itemDetail}>Cantidad pendiente: {item.Quantity}</Text>
-                    <Text style={styles.itemDetail}>Cantidad en almacén: {item.InWhsQty}</Text>
-                    <Text style={styles.itemDetail}>Cantidad contada: {item.CountQty}</Text>
-                    <Text style={styles.itemDetail}>Cantidad total: {item.TotalQty}</Text>
-                    <Text style={styles.itemDetail}>Almacén: {item.WhsCode}</Text>
-                    <Text style={styles.itemDetail}>Gestión: {item.GestionItem}</Text>
                     <Text style={styles.itemDetail}>
-                        Ubicación destino: {item.ToBinCode || 'N/A'}
+                        <Text style={{ fontWeight: 'bold' }}>Código de articulo:</Text> {item.BarCode}{" || "}
+                        <Text style={{ fontWeight: 'bold' }}>Cantidad pendiente:</Text> {item.Quantity}{" || "}
+                        <Text style={{ fontWeight: 'bold' }}>Cantidad en almacén:</Text> {item.InWhsQty}
+                    </Text>
+                    <Text style={styles.itemDetail}>
+                        <Text style={{ fontWeight: 'bold' }}>Cantidad contada: </Text> {item.CountQty}{" || "}
+                        <Text style={{ fontWeight: 'bold' }}>Cantidad total: </Text> {item.TotalQty}{" || "}
+                        <Text style={{ fontWeight: 'bold' }}>Unidad de medida: </Text> {item.UomCode}
+                    </Text>
+                    <Text style={styles.itemDetail}>
+                        <Text style={{ fontWeight: 'bold' }}>Almacén: </Text>Almacén: {item.WhsCode}{" || "}
+                        <Text style={{ fontWeight: 'bold' }}>Gestión: </Text> {item.GestionItem === 'I' ? 'Articulo' : item.GestionItem === 'L' ? 'Lote' : 'Serie'}{" || "}
+                        <Text style={{ fontWeight: 'bold' }}>Ubicación destino: </Text> {item.ToBinCode || 'N/A'}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -549,13 +554,13 @@ const styles = StyleSheet.create({
         marginBottom: 6,
     },
     itemTitle: {
-        fontSize: 24,
+        fontSize: 26,
         fontWeight: 'bold',
         color: '#000',
         marginRight: 30, // espacio para que no lo pise el ícono
     },
     itemDetail: {
-        fontSize: 20,
+        fontSize: 24,
         color: '#000',
         marginBottom: 2,
     }, modalBackground: {

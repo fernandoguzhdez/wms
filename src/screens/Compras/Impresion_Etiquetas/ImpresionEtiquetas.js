@@ -11,11 +11,19 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  PermissionsAndroid,
+  Platform,
+  Linking,
+  Dimensions
 } from 'react-native';
 import { SelectList } from 'react-native-dropdown-select-list';
 import Feather from 'react-native-vector-icons/Feather';
 import axios from 'axios';
 import { AuthContext } from '../../../contex/AuthContext';
+import RNFS from 'react-native-fs';
+import FileViewer from 'react-native-file-viewer';
+import Pdf from 'react-native-pdf';
+import { useNavigation } from '@react-navigation/native';
 
 export const ImpresionEtiquetas = () => {
   const { tokenInfo, url } = useContext(AuthContext);
@@ -27,7 +35,7 @@ export const ImpresionEtiquetas = () => {
   const [isVisible, setIsVisible] = useState(true); // controla si se muestra el card
   const [isLoading, setIsLoading] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
-
+  const navigation = useNavigation();
 
 
   // Animaciones
@@ -61,43 +69,46 @@ export const ImpresionEtiquetas = () => {
     }
   };
 
-  const handleItemPress = (docEntry) => {
-    Alert.alert(
-      'Impresión',
-      '¿Deseas imprimir esta entrada?',
-      [
+  const handleItemPress = async (docEntry) => {
+    setIsPrinting(true);
+    try {
+      const response = await axios.get(
+        `${url}/api/Purchase/Get_PrintDeliveryNotes?DocEntryDelivery=${docEntry}`,
         {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Imprimir',
-          onPress: async () => {
-            setIsPrinting(true);
-            try {
-              await axios.get(
-                `${url}/api/Purchase/Get_PrintDeliveryNotes?DocEntryDelivery=${docEntry}`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${tokenInfo.token}`,
-                  },
-                }
-              );
-              Alert.alert('✅ Impresión', 'La entrada se ha enviado a imprimir.');
-            } catch (error) {
-              console.error('Error al imprimir:', error);
-              Alert.alert('❌ Error', 'No se pudo imprimir la entrada.');
-            } finally {
-              setIsPrinting(false);
-            }
+          headers: {
+            Authorization: `Bearer ${tokenInfo.token}`,
           },
-        },
-      ],
-      { cancelable: true }
-    );
+        }
+      );
+
+      const pdfUrl = response.data.url;
+      if (!pdfUrl) {
+        Alert.alert('Error', 'No se recibió la URL del PDF.');
+        setIsPrinting(false);
+        return;
+      }
+
+      const fileName = pdfUrl.split('/').pop();
+      const path = `${RNFS.DownloadDirectoryPath}/${fileName}`;
+
+      const downloadResult = await RNFS.downloadFile({
+        fromUrl: pdfUrl,
+        toFile: path,
+      }).promise;
+
+      if (downloadResult.statusCode === 200) {
+        // Navegar directamente al visor PDF
+        navigation.navigate('VisorPDF', { path });
+      } else {
+        throw new Error('Error al descargar PDF');
+      }
+    } catch (error) {
+      console.error('❌ Error:', error);
+      Alert.alert('Error', 'No se pudo descargar o abrir el PDF.');
+    } finally {
+      setIsPrinting(false);
+    }
   };
-
-
 
 
   const toggleSearch = () => {

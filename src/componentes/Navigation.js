@@ -35,6 +35,7 @@ import { DocumentosCompras } from '../screens/Compras/DocumentosCompras'
 import { DetalleCompras } from '../screens/Compras/DetalleCompras';
 import { SeriesLotesCompras } from '../screens/Compras/SeriesLotesCompras'
 import { ImpresionEtiquetas } from '../screens/Compras/Impresion_Etiquetas/ImpresionEtiquetas'
+import { VisorPDF } from '../screens/VisorPDF';
 
 const Stack = createNativeStackNavigator();
 
@@ -123,6 +124,7 @@ export function Navigation() {
             <Stack.Screen name="DetalleCompras" component={DetalleCompras} options={{ headerShown: true, title: 'Compras - Detalle', }} />
             <Stack.Screen name="SeriesLotesCompras" component={SeriesLotesCompras} options={{ headerShown: true, title: 'Compras - Series y Lotes', }} />
             <Stack.Screen name="ImpresionEtiquetas" component={ImpresionEtiquetas} options={{ headerShown: true, title: 'Impresion de etiquetas', }} />
+            <Stack.Screen name="VisorPDF" component={VisorPDF} options={{ title: 'Visualizador PDF' }} />
 
         </Stack.Navigator>
     );
