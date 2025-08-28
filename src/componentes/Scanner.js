@@ -104,6 +104,7 @@ export const Scanner = ({ navigation, route }) => {
                                 break;
                             case 6:
                                 if (partes.length > 1) {
+                                    console.log("Escaner if.....")
                                     route.params.map((item) => {
                                         if (item.ItemCode == codigoArticulo) {
                                             gestionArticulo.push(item.GestionItem);
@@ -121,6 +122,7 @@ export const Scanner = ({ navigation, route }) => {
                                     }])
                                 } else {
                                     handleSearchDetalleInv(barcodes[0].data, 'conScan')
+                                    console.log("Escaneandoooooo.....")
                                     setIsLoading(false);
                                 }
 

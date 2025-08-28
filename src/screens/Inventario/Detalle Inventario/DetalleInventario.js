@@ -164,31 +164,54 @@ export const DetalleInventario = ({ navigation }) => {
 
   const handleSubmit = () => {
     const partes = searchDetalleInv.split('||');
+    // validar que traiga siempre 4 partes (3 pipes)
+  if (partes.length !== 5) {
+    Alert.alert(
+      "Formato inválido",
+      "El formato debe ser: articulo||idCode||almacen||ubicacion"
+    );
+    return; // detenemos ejecución
+  }
     const codigoArticulo = partes[0];
     const idCodeSerieLote = partes[1];
     const almacen = partes[2];
-    const ubicacion = partes[3];
+    const ubicacion = partes[3] || null; // si viene vacío será null
     const gestionArticulo = [];
+  
+    dataCompleteDI.forEach(item => {
+      if (item.ItemCode.trim().toUpperCase() === codigoArticulo.trim().toUpperCase()) {
 
-    dataCompleteDI.map(item => {
-      if (item.ItemCode == codigoArticulo) {
         gestionArticulo.push(item.GestionItem);
         console.log('si es igual', item.GestionItem);
       }
     });
-    const gestionA = gestionArticulo[0];
+  
+    // 🚨 Validación: si no encontró el artículo
+  if (gestionArticulo.length === 0) {
+    Alert.alert(
+      "Artículo no encontrado",
+      `El artículo ${codigoArticulo} no existe en el listado`
+    );
+    return; // detenemos la ejecución aquí
+  }
 
+    const gestionA = gestionArticulo[0];
+  
     fetchDataDetalleInvSL(
       codigoArticulo,
       almacen,
       gestionA,
       idCodeSerieLote,
       true,
+      ubicacion // 👈 aquí ya lo pasas
     );
+  
     setSearchDetalleInvSL(idCodeSerieLote);
     setSearchDetalleInv('');
     setDataDetalleInv(dataCompleteDI);
   };
+  
+  
 
   const imprimirEtiquetas = () => {
     itemsSeleccionados.map(item => {
@@ -404,8 +427,8 @@ export const DetalleInventario = ({ navigation }) => {
       <View style={{ flexDirection: 'row', paddingHorizontal: 10, columnGap: 5 }}>
         <SearchBar
           searchIcon={{ size: windowsWidth > 500 ? 30 : 20 }}
-          onChangeText={text => handleSearchDetalleInv(text.toLowerCase())}
-          onClear={text => handleSearchDetalleInv(text)}
+          onChangeText={text => handleSearchDetalleInv(text)}
+          onClear={text => handleSearchDetalleInv('')}
           onSubmitEditing={handleSubmit}
           style={{ color: '#000000', fontSize: windowsWidth > 500 ? 26 : 20 }}
           placeholder="Buscar..."

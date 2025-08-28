@@ -1564,6 +1564,7 @@ export const AuthProvider = ({ children }) => {
             setData(dataComplete)
             setSearchDetalleInvSL('')
             //fetchDataDetalleInvSL()
+            console.log('no se encontro nadita')
         }
     };
 
@@ -1596,43 +1597,6 @@ export const AuthProvider = ({ children }) => {
                 console.error('Error en la búsqueda:', error);
             });
     };
-
-    //METODO PARA FILTRO DE BUSQUEDA DEL MODULO DETALLE INVENTARIO ARTICULOS NORMALES
-    /* const handleSearchDetalleInv = (text, accion) => {
-        let foundInIdBatchSern = ''; // Variable para identificar si se encontró en IdBatchSern
-
-        if (text) {
-            // Aplicar el filtro
-            const filtered = dataCompleteDI.filter(item => {
-                const lowerText = text.toLowerCase();
-
-                // Verificar si el texto coincide con IdBatchSern
-                if (item.IdBatchSern.toLowerCase().includes(lowerText)) {
-                    foundInIdBatchSern = text; // Llenar la variable si hay coincidencia
-                }
-
-                // Filtrar por cualquier campo relevante
-                return (
-                    item.ItemCode.toLowerCase().includes(lowerText) ||
-                    item.ItemName.toLowerCase().includes(lowerText) ||
-                    item.IdBatchSern.toLowerCase().includes(lowerText)
-                );
-            });
-
-            // Actualizar la lista filtrada
-            setDataDetalleInv(filtered);
-            // Actualizar el estado de búsqueda
-            setSearchDetalleInv(text);
-        } else {
-            setDataDetalleInv(dataCompleteDI);
-            setSearchDetalleInv('');
-            fetchDataDetalleInv();
-            foundInIdBatchSern = ''; // Reiniciar la variable cuando no hay texto
-        }
-
-        console.log('Found in IdBatchSern:', foundInIdBatchSern); // Depuración
-        setSearchIdCode(foundInIdBatchSern)
-    }; */
 
 
     //METODO PARA EL MODULO DE DETALLE INVENTARIO Y CARGAR ARTICULOS PARA IMPRESION ETIQUETAS

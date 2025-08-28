@@ -479,6 +479,13 @@ export const DetalleInventarioSL = ({ navigation, route }) => {
         data={getPaginatedData()}
         renderItem={renderItem}
         keyExtractor={(item, index) => index.toString()}
+        ListEmptyComponent={() => (
+          <View style={{ flex: 1, alignItems: 'center', marginTop: 50 }}>
+            <Text style={{ fontSize: 20, color: '#999' }}>
+              No se encontró el artículo
+            </Text>
+          </View>
+        )}
       />
 
       {/* Floating Button */}

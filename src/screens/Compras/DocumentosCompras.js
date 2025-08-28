@@ -138,7 +138,7 @@ export const DocumentosCompras = () => {
         >
             <Text style={styles.itemTitle}>#{item.DocNum} - {item.CardName}</Text>
             <Text style={styles.itemDetail}>Fecha: {new Date(item.DocDate).toLocaleDateString()}</Text>
-            <Text style={styles.itemDetail}>Total: ${item.DocTotal.toFixed(2)}</Text>
+            <Text style={styles.itemDetail}>Total: {item.DocTotal.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}</Text>
             <Text style={styles.itemDetail}>Comentario: {item.Comments}</Text>
         </TouchableOpacity>
     );
