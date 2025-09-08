@@ -1623,40 +1623,66 @@ export const AuthProvider = ({ children }) => {
     };
 
     //METODO PARA CARGAR LAS IMPRESORAS DE DETALLE DE INVENTARIO
-    const getPrintersList = () => {
-        setIsLoading(true)
-        // Set headers
+    const getPrintersList = async () => {
+        setIsLoading(true);
+
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${tokenInfo.token}`
+            'Authorization': `Bearer ${tokenInfo.token}`,
         };
-        // Make GET request
-        axios.get(`${url}/api/Inventory/List_Prints`, { headers })
-            .then(response => {
-                const printersList = response.data.Prints.map(printer => ({
-                    key: printer.PrintCode,
-                    value: printer.PrintName
-                }));
-                console.log('Listado de impresoras...', printersList)
-                setPrintersList(printersList)
-                setIsLoading(false)
-            })
-            .catch(error => {
-                Alert.alert('Error', `Error al cargar listado de impresoras : ${response.status}`, [
-                    { text: 'OK', onPress: () => { } },
-                ]);
-                setIsLoading(false)
-            });
-    }
 
+        try {
+            const response = await axios.get(`${url}/api/Inventory/List_Prints`, { headers });
+
+            const printersList = response.data.Prints.map(printer => ({
+                key: printer.PrintCode,
+                value: printer.PrintName,
+            }));
+
+            console.log('Listado de impresoras...', printersList);
+            setPrintersList(printersList);
+
+            // Verificar impresora guardada en AsyncStorage
+            const storedPrinter = await AsyncStorage.getItem('defaultPrinter');
+
+            if (storedPrinter) {
+                const parsedPrinter = JSON.parse(storedPrinter);
+                setDefaultPrinter(parsedPrinter);
+                setSelectedPrinter(parsedPrinter.value);
+            } else if (printersList.length > 0) {
+                // Si no hay guardada, usar la primera de la lista
+                const firstPrinter = printersList[0];
+                setDefaultPrinter(firstPrinter);
+                setSelectedPrinter(firstPrinter.value);
+
+                // Guardar como default en AsyncStorage
+                await AsyncStorage.setItem('defaultPrinter', JSON.stringify(firstPrinter));
+            }
+
+            setIsLoading(false);
+        } catch (error) {
+            console.error("Error al cargar listado de impresoras: ", error);
+            Alert.alert(
+                'Error',
+                'Error al cargar listado de impresoras',
+                [{ text: 'OK', onPress: () => { } }],
+            );
+            setIsLoading(false);
+        }
+    };
+
+
+    // cargar impresora por default desde AsyncStorage
     const loadDefaultPrinter = async () => {
         try {
-            const storedPrinter = await AsyncStorage.getItem('defaultPrinter');
+            const storedPrinter = await AsyncStorage.getItem("defaultPrinter");
             if (storedPrinter) {
-                setDefaultPrinter(JSON.parse(storedPrinter));
+                const parsedPrinter = JSON.parse(storedPrinter);
+                setDefaultPrinter(parsedPrinter);
+                setSelectedPrinter(parsedPrinter.value); // <- importante para que se seleccione
             }
         } catch (error) {
-            console.error('Error al cargar desde el almacenamiento local: ', error);
+            console.error("Error al cargar desde el almacenamiento local: ", error);
         }
     };
 

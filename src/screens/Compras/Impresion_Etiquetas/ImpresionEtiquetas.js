@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -24,9 +24,10 @@ import RNFS from 'react-native-fs';
 import FileViewer from 'react-native-file-viewer';
 import Pdf from 'react-native-pdf';
 import { useNavigation } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/Feather';
 
 export const ImpresionEtiquetas = () => {
-  const { tokenInfo, url } = useContext(AuthContext);
+  const { tokenInfo, url, printersList, setSelectedPrinter, selectedPrinter, getPrintersList, defaultPrinter, loadDefaultPrinter, } = useContext(AuthContext);
   const [selected, setSelected] = useState('');
   const [docEntry, setDocEntry] = useState('');
   const [result, setResult] = useState(null);
@@ -43,6 +44,11 @@ export const ImpresionEtiquetas = () => {
   const arrowRotation = useState(new Animated.Value(1))[0]; // rotación ícono
 
   const options = [{ key: '22', value: 'Entrada de mercancías' }];
+
+  useEffect(() => {
+    getPrintersList()
+    loadDefaultPrinter()
+  }, []);
 
   const handleSearch = async () => {
     if (selected !== '22') return;
@@ -73,7 +79,7 @@ export const ImpresionEtiquetas = () => {
     setIsPrinting(true);
     try {
       const response = await axios.get(
-        `${url}/api/Purchase/Get_PrintDeliveryNotes?DocEntryDelivery=${docEntry}`,
+        `${url}/api/Purchase/Get_PrintDeliveryNotes?DocEntryDelivery=${docEntry}&NamePrint=${selectedPrinter}`,
         {
           headers: {
             Authorization: `Bearer ${tokenInfo.token}`,
@@ -105,6 +111,33 @@ export const ImpresionEtiquetas = () => {
     } catch (error) {
       console.error('❌ Error:', error);
       Alert.alert('Error', 'No se pudo descargar o abrir el PDF.');
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handlePrintDirect = async (docEntry) => {
+    setIsPrinting(true);
+    console.log('Datos a enviar...', docEntry, selectedPrinter)
+    try {
+      const response = await axios.get(
+        `${url}/api/Purchase/Get_PrintDeliveryNotes?DocEntryDelivery=${docEntry}&NamePrint=${selectedPrinter}`,
+        {
+          headers: {
+            Authorization: `Bearer ${tokenInfo.token}`,
+          },
+        }
+      );
+      Alert.alert('Informacion', 'Imprimiendo...', [
+        {
+          text: 'OK', onPress: () => {
+          }
+        },
+      ]);
+      console.log('Enviado...', response.data)
+    } catch (error) {
+      console.error('❌ Error:', error);
+      Alert.alert('Error', 'No se pudo imprimir');
     } finally {
       setIsPrinting(false);
     }
@@ -175,6 +208,22 @@ export const ImpresionEtiquetas = () => {
             inputStyles={styles.selectInputText}
             dropdownTextStyles={styles.selectDropdownText}
           />
+          <SelectList
+            data={printersList}
+            setSelected={(val) => setSelectedPrinter(val)}
+            save='value'
+            placeholder="Selecciona una impresora..."
+            defaultOption={
+              defaultPrinter
+                ? { key: defaultPrinter.key, value: defaultPrinter.value }
+                : null
+            }
+            notFoundText="No se encontraron resultados"
+            inputStyles={styles.selectInputText}
+            dropdownTextStyles={styles.selectDropdownText}
+            boxStyles={styles.selectBox}
+            searchPlaceholder="Buscar..."
+          />
 
           {selected === '22' && (
             <View style={styles.searchContainer}>
@@ -217,14 +266,25 @@ export const ImpresionEtiquetas = () => {
           data={filteredResults}
           keyExtractor={(item) => item.DocEntry.toString()}
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => handleItemPress(item.DocEntry)}>
-              <View style={styles.card}>
-                <Text style={styles.title}>{item.CardName}</Text>
-                <Text style={styles.text}>Folio: {item.DocNum}</Text>
-                <Text style={styles.text}>Fecha: {new Date(item.DocDate).toLocaleDateString()}</Text>
-                <Text style={styles.text}>Comentarios: {item.Comments}</Text>
+            <View style={styles.card}>
+              <Text style={styles.title}>{item.CardName}</Text>
+              <Text style={styles.text}>Folio: {item.DocNum}</Text>
+              <Text style={styles.text}>Fecha: {new Date(item.DocDate).toLocaleDateString()}</Text>
+              <Text style={styles.text}>Comentarios: {item.Comments}</Text>
+              <View style={{ flexDirection: 'row', gap: 20, marginTop: 10 }}>
+                <TouchableOpacity
+                  style={styles.previewer}
+                  onPress={() => handleItemPress(item.DocEntry)}>
+                  <Icon name="eye" size={24} color="#322fd1ff" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.print}
+                  onPress={() => handlePrintDirect(item.DocEntry)}>
+                  <Icon name="printer" size={24} color="#322fd1ff" />
+                </TouchableOpacity>
               </View>
-            </TouchableOpacity>
+
+            </View>
           )}
 
         />
@@ -399,6 +459,32 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#333',
+  },
+  previewer: {
+    width: 60,  // ancho fijo
+    height: 60, // alto fijo
+    borderRadius: 30, // la mitad del tamaño => círculo
+    backgroundColor: "#f5f5f5", // color de fondo
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5, // sombra en Android
+  },
+  print: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#f5f5f5",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5,
   },
 
 
