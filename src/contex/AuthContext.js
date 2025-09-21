@@ -1782,7 +1782,7 @@ export const AuthProvider = ({ children }) => {
                         setIsEnter(false)
                     } else {
                         //setItemSeleccionadoProd(filtradoSerieLote[0])
-                        setItemSLProd(fi * ltradoSerieLote[0])
+                        setItemSLProd(filtradoSerieLote[0])
                         console.log('serie/lote encontrado...', filtradoSerieLote[0])
                         setIsEnter(true)
                     }

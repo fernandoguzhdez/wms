@@ -75,7 +75,7 @@ export const DetalleInventarioSL = ({ navigation, route }) => {
   const [modalUbicaciones, setModalUbicaciones] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [ubicaciones, setUbicaciones] = useState([]);
-  const [ubicacionSeleccionada, setUbicacionSeleccionada] = useState(null);
+  const [ubicacionSeleccionada, setUbicacionSeleccionada] = useState("");
   const [loteSeleccionado, setLoteSeleccionado] = useState([])
 
   const limpiarVariables = () => {
@@ -85,7 +85,7 @@ export const DetalleInventarioSL = ({ navigation, route }) => {
     return unsubscribe;
   };
 
-  const actualizarUbicacion = () => {
+  /* const actualizarUbicacion = () => {
     console.log('Datos a enviar...', [{
       "gestionItem": loteSeleccionado.GestionItem,
       "itemCode": loteSeleccionado.ItemCode,
@@ -139,7 +139,84 @@ export const DetalleInventarioSL = ({ navigation, route }) => {
           },
         ]);
       });
-  }
+  } */
+
+  const concatenarUbicaciones = async (ubicacionesConcat) => {
+    try {
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${tokenInfo.token}`,
+      };
+
+      const response = await axios.post(
+        `${url}/api/Inventory/Bins?Ubicacion=${ubicacionesConcat}`,
+        {},
+        { headers }
+      );
+
+      if (response.data && response.data.OBIN && response.data.OBIN.length > 0) {
+        const { AbsEntry, BinCode } = response.data.OBIN[0];
+        // Actualizo la variable como objeto válido
+        setUbicacionSeleccionada({ AbsEntry, BinCode });
+        // Ahora sí ejecuto actualizarUbicacion
+        actualizarUbicacion({ AbsEntry, BinCode });
+      } else {
+        Alert.alert("Error", "No se encontró información de la ubicación concatenada");
+      }
+    } catch (error) {
+      Alert.alert("Error", `Fallo en concatenarUbicaciones: ${error}`);
+    }
+  };
+
+
+  const actualizarUbicacion = (ubi = ubicacionSeleccionada) => {
+    if (!ubi) {
+      Alert.alert("Info", "Debes seleccionar al menos una ubicación");
+      return;
+    }
+
+    const data = {
+      gestionItem: loteSeleccionado.GestionItem,
+      itemCode: loteSeleccionado.ItemCode,
+      whsCode: loteSeleccionado.WhsCode,
+      binEntry: ubi.AbsEntry,
+      binName: ubi.BinCode,
+      serialOrLote: loteSeleccionado.IdCode,
+    };
+
+    console.log("Datos a enviar...", data);
+
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${tokenInfo.token}`,
+    };
+
+    axios
+      .put(`${url}/api/Inventory/Upd_Batchs_Serials`, [data], { headers })
+      .then(response => {
+        Alert.alert("Info", "Actualizado exitosamente!!", [
+          {
+            text: "OK",
+            onPress: () => {
+              fetchDataDetalleInvSL(
+                loteSeleccionado.ItemCode,
+                loteSeleccionado.WhsCode,
+                loteSeleccionado.GestionItem
+              );
+              setModalUbicaciones(false);
+              setUbicacionSeleccionada(null);
+              setUbicaciones([]);
+              setSearchText("");
+              setLoteSeleccionado([]);
+            },
+          },
+        ]);
+      })
+      .catch(error => {
+        Alert.alert("Error", `Error al actualizar ubicación : ${error}`);
+      });
+  };
+
 
   const buscarUbicaciones = (texto) => {
     setSearchText(texto);
@@ -837,22 +914,32 @@ export const DetalleInventarioSL = ({ navigation, route }) => {
 
             <TouchableOpacity
               onPress={() => {
+                if (!ubicacionSeleccionada) {
+                  Alert.alert("Info", "Debes seleccionar al menos una ubicación");
+                  return;
+                }
+
                 Alert.alert(
-                  'Advertencia',
-                  '¿Estas seguro de actualizar la ubicación?',
+                  "Advertencia",
+                  "¿Estas seguro de actualizar la ubicación?",
                   [
                     {
-                      text: 'Aceptar',
+                      text: "Aceptar",
                       onPress: () => {
-                        setModalUbicaciones(false);
-                        actualizarUbicacion();
+                        if (typeof ubicacionSeleccionada === "string") {
+                          // Caso varias → primero concatenar
+                          concatenarUbicaciones(ubicacionSeleccionada);
+                        } else {
+                          // Caso única → actualizar directo
+                          actualizarUbicacion();
+                        }
                       },
                     },
                     {
-                      text: 'Cancelar',
-                      style: 'cancel',
+                      text: "Cancelar",
+                      style: "cancel",
                     },
-                  ],
+                  ]
                 );
               }}
               disabled={!ubicacionSeleccionada} // opcional: deshabilitar si no hay selección
@@ -864,6 +951,8 @@ export const DetalleInventarioSL = ({ navigation, route }) => {
                 size={28}
               />
             </TouchableOpacity>
+
+
           </View>
 
           <FlatList
@@ -873,18 +962,48 @@ export const DetalleInventarioSL = ({ navigation, route }) => {
             renderItem={({ item }) => (
               <TouchableOpacity
                 onPress={() => {
-                  setUbicacionSeleccionada(item)
+                  if (!ubicacionSeleccionada) {
+                    // primera selección → guardo objeto
+                    setUbicacionSeleccionada(item);
+                  } else if (typeof ubicacionSeleccionada === "object") {
+                    // ya había una, ahora concateno objeto.BinCode + nuevo BinCode
+                    if (ubicacionSeleccionada.AbsEntry === item.AbsEntry) {
+                      // si es el mismo, lo quito
+                      setUbicacionSeleccionada(null);
+                    } else {
+                      // paso de objeto → string concatenado
+                      setUbicacionSeleccionada(ubicacionSeleccionada.BinCode + item.BinCode);
+                    }
+                  } else if (typeof ubicacionSeleccionada === "string") {
+                    // ya estoy en modo string concatenado
+                    if (ubicacionSeleccionada.includes(item.BinCode)) {
+                      // quitar el código si ya estaba
+                      const nuevas = ubicacionSeleccionada.replace(item.BinCode, "");
+                      setUbicacionSeleccionada(nuevas);
+                    } else {
+                      // concatenar directo
+                      setUbicacionSeleccionada(prev => prev + item.BinCode);
+                    }
+                  }
                 }}
                 style={{
                   padding: 10,
-                  backgroundColor: ubicacionSeleccionada?.AbsEntry === item.AbsEntry ? '#D0E6FF' : '#F0F0F0',
+                  backgroundColor:
+                    (typeof ubicacionSeleccionada === "object" &&
+                      ubicacionSeleccionada &&
+                      ubicacionSeleccionada.AbsEntry === item.AbsEntry) ||
+                      (typeof ubicacionSeleccionada === "string" &&
+                        ubicacionSeleccionada.includes(item.BinCode))
+                      ? "#D0E6FF"
+                      : "#F0F0F0",
+
                   marginBottom: 8,
                   borderRadius: 6,
-                  maxHeight: 400
                 }}
               >
-                <Text style={{ color: '#000', fontWeight: 'bold' }}>{item.BinCode}</Text>
+                <Text style={{ color: "#000", fontWeight: "bold" }}>{item.BinCode}</Text>
               </TouchableOpacity>
+
             )}
             style={{ height: '100%' }}
           />
